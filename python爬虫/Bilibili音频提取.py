@@ -1,10 +1,5 @@
-import requests
+import requests, json ,os, sys, asyncio, aiohttp,re
 from lxml import etree
-import json
-import os
-import sys
-import asyncio
-import aiohttp
 from time import time
 
 
@@ -27,11 +22,8 @@ def audio_link(data):
     script_json = json.loads(script)
     # 获取标题
     title = html.xpath('//*[@id="viewbox_report"]/h1/@title')[0]
-    error_set = ['/', r'\\', ':', '*', '?', '"', '|', '<', '>']
-    # 去除特殊符号
-    for i in title:
-        if i in error_set:
-            title = title.replace(i, '')
+    # 去除标点符号
+    re.sub(r'\W', ' ', title)
     # 解析音频的地址
     audio_url = script_json["data"]['dash']["audio"][0]["baseUrl"]
     yield {"audio_url": audio_url, "title": title}
@@ -56,8 +48,9 @@ def main():
         datalist = []
         threads = []
         url = input("输入链接(多链接时，以英文逗号隔开):")
-        if "www.bilibili.com" not in url:
-            print("输入正确的网址")
+        # 判断网址是否正确
+        if not re.fullmatch(r'https?:/{2}w{3}\.(bili){2}\.com.*', url):
+            print("url错误")
             return
         link = url.split(',')
         loop = asyncio.get_event_loop()
@@ -95,6 +88,7 @@ if __name__ == '__main__':
         "sec-fetch-site": "cross-site",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36 Edg/85.0.564.41"
     }
+    # 判断文件夹是否存在
     if not os.path.exists(location):
         os.mkdir(location)
     while True:
